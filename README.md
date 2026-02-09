@@ -20,8 +20,8 @@ pip install "lcm[all] @ git+https://github.com/Atul04singh/LCM_wrapper.git#subdi
 
 For detailed information about features, configuration, and API usage, please refer to the following guides:
 
-- **[Detailed README](file:///lcm-code/README.md)**: Architecture, Config Resolver, and API Reference.
-- **[Feature Walkthrough](file:///lcm-code/walkthrough.md)**: A step-by-step guide on how to use Ollama and Hugging Face with LCM.
+- **[Detailed README](./lcm-code/README.md)**: Architecture, Config Resolver, and API Reference.
+- **[Feature Walkthrough](./lcm-code/walkthrough.md)**: A step-by-step guide on how to use Ollama and Hugging Face with LCM.
 
 ---
 
