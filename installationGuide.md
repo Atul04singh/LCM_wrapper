@@ -10,10 +10,10 @@ You can install the library directly using `pip` by pointing to your GitHub repo
 
 ```bash
 # Basic installation from GitHub
-pip install git+https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git#subdirectory=lcm-code
+pip install git+https://github.com/Atul04singh/LCM_wrapper.git#subdirectory=lcm-code
 
 # Installation with all dependencies (Ollama + Hugging Face)
-pip install "lcm[all] @ git+https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git#subdirectory=lcm-code"
+pip install "lcm[all] @ git+https://github.com/Atul04singh/LCM_wrapper.git#subdirectory=lcm-code"
 ```
 
 ## 🛠️ Step-by-Step for New Projects
@@ -29,7 +29,7 @@ pip install "lcm[all] @ git+https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git#
    _(Replace `YOUR_USERNAME` and `YOUR_REPO_NAME` with your actual GitHub details)_
 
    ```bash
-   pip install "lcm[all] @ git+https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git#subdirectory=lcm-code"
+   pip install "lcm[all] @ git+https://github.com/Atul04singh/LCM_wrapper.git#subdirectory=lcm-code"
    ```
 
 3. **Verify Installation**:
