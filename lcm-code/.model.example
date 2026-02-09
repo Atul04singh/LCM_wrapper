@@ -1,0 +1,7 @@
+provider = ollama             # ollama | huggingface
+model = gemma3:4b             # Model ID or name
+runtime = local               # local | cloud (HF only)
+stream = true                 # Global streaming default
+timeout = 120                 # Connection timeout (s)
+device = auto                 # For HF Local: cpu | cuda | mps
+hf_token = ${HF_TOKEN}        # Your Hugging Face API key
