@@ -5,7 +5,9 @@ from typing import List, AsyncGenerator, Optional, Any
 from ..base import ProviderRuntime, Message
 from ..config import LCMConfig
 from ..errors import AuthError, RuntimeUnavailableError
+from ..registry import ProviderRegistry
 
+@ProviderRegistry.register("huggingface")
 class HuggingFaceProvider(ProviderRuntime):
     def __init__(self, config: LCMConfig):
         self.config = config
@@ -39,6 +41,8 @@ class HuggingFaceProvider(ProviderRuntime):
         except Exception:
             return False
 
+from ..utils import retry
+
 class HFCloudRuntime(ProviderRuntime):
     def __init__(self, config: LCMConfig):
         self.config = config
@@ -46,6 +50,7 @@ class HFCloudRuntime(ProviderRuntime):
         self.model = config.hf_model or config.model
         self.base_url = f"https://api-inference.huggingface.co/models/{self.model}"
 
+    @retry(retries=3)
     async def chat(self, messages: List[Message], **params) -> str:
         headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
         async with httpx.AsyncClient(timeout=self.config.timeout) as client:
@@ -171,10 +176,24 @@ class HFLocalRuntime(ProviderRuntime):
             yield new_text
 
     async def embed(self, text: str) -> List[float]:
-        # For embeddings, we'd typically use a SentenceTransformer or specific model
-        # Simplified: Use the pooler output of the model if it supports it, 
-        # but better to let user specify a dedicated embedding model.
-        raise NotImplementedError("Local embeddings require a dedicated embedding model/pipeline.")
+        # For embeddings, we use SentenceTransformers or fallback to the pipeline's feature extraction
+        try:
+            from sentence_transformers import SentenceTransformer
+            model = SentenceTransformer(self.model_id)
+            embedding = model.encode(text).tolist()
+            return embedding
+        except ImportError:
+            # Fallback to transformers feature-extraction pipeline
+            from transformers import pipeline
+            if self.config.verbose:
+                print("⚠️ sentence-transformers not found, falling back to basic feature extraction.")
+            feat_ext = pipeline("feature-extraction", model=self.model_id, device=self.pipeline.device if self.pipeline else -1)
+            outputs = feat_ext(text)
+            # Pool the results (mean pooling)
+            import torch
+            embeddings = torch.tensor(outputs[0])
+            mean_pooled = torch.mean(embeddings, dim=0).tolist()
+            return mean_pooled
 
     async def health(self) -> bool:
         # If we can import transformers and find the model files, we are healthy

@@ -3,14 +3,20 @@ import httpx
 from ..base import ProviderRuntime, Message
 from ..config import LCMConfig
 from ..errors import RuntimeUnavailableError
+from ..registry import ProviderRegistry
+from ..utils import retry
 
+@ProviderRegistry.register("ollama")
 class OllamaProvider(ProviderRuntime):
     def __init__(self, config: LCMConfig):
         self.config = config
         self.base_url = config.base_url or "http://localhost:11434"
 
+    @retry(retries=3)
     async def chat(self, messages: List[Message], **params) -> str:
         await self._ensure_model()
+        if self.config.verbose:
+            print(f"💬 Sending chat request to Ollama...")
         try:
             async with httpx.AsyncClient(timeout=self.config.timeout) as client:
                 resp = await client.post(
@@ -29,6 +35,8 @@ class OllamaProvider(ProviderRuntime):
 
     async def stream(self, messages: List[Message], **params) -> AsyncGenerator[str, None]:
         await self._ensure_model()
+        if self.config.verbose:
+            print(f"🌪️ Starting stream from Ollama...")
         async with httpx.AsyncClient(timeout=self.config.timeout) as client:
             async with client.stream(
                 "POST",
@@ -66,8 +74,11 @@ class OllamaProvider(ProviderRuntime):
     async def _ensure_model(self):
         """Checks if model exists, if not pulls it."""
         if not await self._check_model_exists():
-            print(f"Model {self.config.model} not found locally. Pulling...")
+            if self.config.verbose:
+                print(f"📥 Model {self.config.model} not found locally. Pulling from Ollama... 📦")
             await self.pull()
+            if self.config.verbose:
+                print(f"✅ Model {self.config.model} is ready!")
 
     async def _check_model_exists(self) -> bool:
         async with httpx.AsyncClient(timeout=5) as client:

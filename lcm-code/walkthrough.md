@@ -1,168 +1,237 @@
-# LCM (Lightweight Chat Model) - Comprehensive Walkthrough
+# 📖 The Catchy API Book: Master LCM in Minutes
 
-LCM is designed to be the "one-stop-shop" for Python developers who want to switch between local and cloud AI models without rewriting their application logic. This guide covers how to use LCM for both **Ollama** and **Hugging Face**.
-
----
-
-Regardless of which model you use, LCM provides three core functions in both **Asynchronous** and **Synchronous** flavors.
-
-### Asynchronous (Modern Python)
-
-Best for high-performance apps, web servers, and GUI apps. These require `await` and `asyncio`.
-
-| Method                                 | Description                      |
-| :------------------------------------- | :------------------------------- |
-| `await model.chat(...)`                | Returns full response as string. |
-| `async for token in model.stream(...)` | Yields tokens one by one.        |
-| `await model.embed(...)`               | Returns vector embedding.        |
-
-### Synchronous (Simple Scripting)
-
-Best for simple automation scripts, data processing, or when you don't want to use `asyncio`. **No `await` or `async def` required.**
-
-| Method                                | Description                      |
-| :------------------------------------ | :------------------------------- |
-| `model.chat_sync(...)`                | Returns full response as string. |
-| `for token in model.stream_sync(...)` | Yields tokens one by one.        |
-| `model.embed_sync(...)`               | Returns vector embedding.        |
+Welcome to the definitive guide for LCM. This book covers every method in our "Catchy API" suite, designed to make local LLM development feel like magic. 🪄
 
 ---
 
-## 2. Using LCM with Ollama
+## 🗂️ Table of Contents
 
-Ollama is treated as a **local-entry** provider. Your local Ollama server acts as the gateway for everything.
+0. [Pre-requisite: The .model File](#0-pre-requisite-the-model-file)
+1. [AI.ask() - Common Sense Chat](#1-aiask---common-sense-chat)
+2. [AI.flow() - The Token Streamer](#2-aiflow---the-token-streamer)
+3. [AI.extract() - Data Digging](#3-aiextract---data-digging)
+4. [AI.point() - Coordinate Space](#4-aipoint---coordinate-space)
+5. [AI.peek() - The Health Monitor](#5-aipeek---the-health-monitor)
+6. [AI.remember() & AI.forget() - Memory Control](#6-airemember--aiforget---memory-control)
+7. [AI.pipe() - Flow Chaining](#7-aipipe---flow-chaining)
+8. [AI.use() - Middleware Superpowers](#8-aiuse---middleware-superpowers)
 
-### Features
+---
 
-- **Auto-Pull**: If you request a model you don't have, LCM will automatically start downloading it.
-- **Cloud Proxy**: If you use a model name with `-cloud` (e.g., `llama3-cloud`), your local server handles the cloud connection (requires `ollama login` via CLI).
+## 🚀 The Catchy API at a Glance
 
-### `.model` Configuration
+| Method            | What it does      | Why it's cool                               |
+| :---------------- | :---------------- | :------------------------------------------ |
+| **`.ask()`**      | Quick answers     | Replaces boring `chat`                      |
+| **`.flow()`**     | Stream tokens     | Smooth character-by-character effect        |
+| **`.extract()`**  | Get JSON data     | No more manual parsing                      |
+| **`.point()`**    | Vector Embeddings | Turn text into space-coordinates            |
+| **`.peek()`**     | Health Check      | See if your "brain" is ready                |
+| **`.remember()`** | Enable Memory     | Keeps track of the conversation             |
+| **`.forget()`**   | Clear History     | Fresh start                                 |
+| **`.pipe()`**     | Chaining          | Connect tasks like blocks                   |
+| **`.use()`**      | Middleware        | Intercept & modify messages (Express style) |
 
-Create a file named `.model` in your project root:
+---
+
+## 0. Pre-requisite: The .model File
+
+Before you write a single line of Python, LCM needs to know which "brain" to use. We do this with a `.model` file. It's like a `.env` file, but for LLMs.
+
+### Why use a `.model` file?
+
+- **Zero Config in Code**: Your Python scripts stay clean and focused on logic.
+- **Easy Swapping**: Change from Ollama to Hugging Face by editing one word in one file.
+- **Secure**: Interpolate environment variables for sensitive tokens.
+
+### 📝 The .model File (Ollama Example)
+
+For local-first development with Ollama.
+Create a `.model` file in your project folder:
 
 ```ini
-provider = ollama
-model = gemma3:4b
-runtime = local
-stream = true
-timeout = 120
-base_url = http://localhost:11434  # Optional: defaults to this
+provider = ollama             # Use Ollama engine
+model = gemma3:latest         # The model you pulled via CLI
+stream = true                 # Default to smooth token streaming
+timeout = 60                  # Wait for 60s before timing out
 ```
 
-### Full Example
+### 📝 The .model File (Hugging Face Example)
+
+For running models from the HF Hub, either locally or via the Cloud API.
+
+```ini
+provider = huggingface        # Use Hugging Face engine
+model = mistralai/Mistral...  # The HF model ID
+runtime = cloud               # Options: 'cloud' (Inference API) or 'local'
+hf_token = ${HF_TOKEN}        # Load token from your system ENV
+device = cuda                 # For 'local' runtime: cuda, mps, or cpu
+```
+
+### 🔍 Search Priority (Where does LCM look?)
+
+1. **Explicit Way**: `AI(model="...")` (Highest priority)
+2. **Local Way**: `./.model` (In your current project folder)
+3. **Global Way**: `~/.model` (In your Home folder for default settings)
+4. **Environment Way**: `LCM_PROVIDER=ollama` (System-wide variables)
+
+---
+
+## 1. AI.ask() - Common Sense Chat
+
+**Purpose**: The bread and butter of AI interaction. Use this when you want a straightforward answer to a question.
+
+**Why it's cool**: It replaces the generic `chat` method with something more human. It automatically handles prompt normalization and context (if enabled).
+
+### 💻 Example
+
+```python
+from lcm import AI
+
+ai = AI()
+answer = ai.ask("What is the most popular programming language in 2026?")
+print(answer)
+```
+
+---
+
+## 2. AI.flow() - The Token Streamer
+
+**Purpose**: For real-time applications where waiting for a full paragraph is too slow.
+
+**Why it's cool**: It gives that "AI is typing" effect. It works BOTH in `async` (for web servers) and `sync` (for simple terminal scripts).
+
+### 💻 Example (Sync)
+
+```python
+ai = AI()
+for token in ai.flow_sync("Tell me a story about a dragon"):
+    print(token, end="", flush=True)
+```
+
+### 💻 Example (Async)
 
 ```python
 import asyncio
-from lcm import Model
+from lcm import AI
 
-async def main():
-    # Model name can be passed in Constructor or .model file
-    model = Model("gemma3:4b")
-
-    # 1. Chat
-    print(await model.chat("Hi!"))
-
-    # 2. Embed
-    vec = await model.embed("Hello world")
-    print(f"Vector size: {len(vec)}")
-
-asyncio.run(main())
-```
-
----
-
-## 3. Using LCM with Hugging Face
-
-Hugging Face has two distinct runtimes: **Cloud** (API) and **Local** (GPU/CPU).
-
-### Case A: Hugging Face Cloud (Inference API)
-
-Use this for instant access to huge models without using your own hardware.
-
-**`.model` Configuration:**
-
-```ini
-provider = huggingface
-runtime = cloud
-hf_model = meta-llama/Llama-3.2-3B-Instruct
-hf_token = your_hf_token_here
-```
-
-### Case B: Hugging Face Local (Transformers)
-
-Use this for 100% private execution on your own GPU/CPU.
-
-**`.model` Configuration:**
-
-```ini
-provider = huggingface
-runtime = local
-model = mbx/TinyLlama-1.1B-Chat-v1.0
-device = cuda  # Options: 'cuda', 'mps' (Mac), 'cpu'
-```
-
-### Full Example
-
-```python
-import asyncio
-from lcm import Model
-
-async def main():
-    # Switching to cloud via code override
-    model = Model("Qwen/Qwen2.5-7B-Instruct", provider="huggingface", runtime="cloud")
-
-    async for token in model.stream("Plan a 3-day trip to Paris."):
+async def stream_data():
+    ai = AI()
+    async for token in ai.flow("Tell me a story about a robot"):
         print(token, end="", flush=True)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+asyncio.run(stream_data())
 ```
 
 ---
 
-## 4. Advanced: The `.model` File Reference
+## 3. AI.extract() - Data Digging
 
-The `.model` file follows a simple `key = value` format. You can use environment variables inside it using `${VAR_NAME}` syntax.
+**Purpose**: To get structured data (JSON) out of a mess of text.
 
-| Key        | Description                     | Example                               |
-| :--------- | :------------------------------ | :------------------------------------ |
-| `provider` | `ollama` or `huggingface`       | `provider = ollama`                   |
-| `model`    | The model name/ID               | `model = llama3`                      |
-| `runtime`  | For HF only: `local` or `cloud` | `runtime = cloud`                     |
-| `hf_token` | Your Hugging Face API key       | `hf_token = ${HF_TOKEN}`              |
-| `base_url` | Custom API endpoint             | `base_url = http://192.168.1.5:11434` |
-| `device`   | For HF Local: hardware target   | `device = cpu`                        |
+**Why it's cool**: You don't need to write regex or tell the AI "Respond only with JSON" ten times. Just pass a schema, and LCM handles the heavy lifting.
 
-### Configuration Priority
+### 💻 Example
 
-LCM resolves settings in this order (highest to lowest):
-
-1.  **Constructor overrides**: `Model(model="xxx", provider="huggingface")` - _Explicit Way_
-2.  **Project-level**: `.model` in your current folder.
-3.  **User-level**: `.model` in your Home directory (`~/.model`).
-4.  **Environment Variables**: e.g., `LCM_MODEL=xxx`.
+```python
+ai = AI()
+schema = {"capital": "string", "population": "number"}
+data = await ai.extract("Japan is an island country in East Asia.", schema=schema)
+# Output: {"capital": "Tokyo", "population": 125000000}
+```
 
 ---
 
-## 5. Tips & Tricks
+## 4. AI.point() - Coordinate Space
 
-### Streaming Output Explanation
+**Purpose**: Turning text into a vector (a list of numbers) for search and memory systems.
 
-In the streaming examples, you'll see this line:
-`print(token, end="", flush=True)`
+**Why it's cool**: It simplifies the complex field of "embeddings" into a single command. You are "pointing" to a location in the AI's semantic map.
 
-- **`end=""`**: By default, `print()` adds a newline (`\n`) at the end. Setting this to empty ensures tokens appear next to each other in a single line.
-- **`flush=True`**: Python's output is buffered. This forces the console to show the token _immediately_ rather than waiting for a full line, creating that smooth "AI character-by-character" effect.
+### 💻 Example
+
+```python
+vec = await ai.point("The future of artificial intelligence")
+print(f"Vector Dimensions: {len(vec)}")
+```
 
 ---
 
+## 5. AI.peek() - The Health Monitor
+
+**Purpose**: To check if your local AI is ready to talk.
+
+**Why it's cool**: No more cryptic connection errors. `peek()` tells you exactly which model is loaded, which provider is running, and if everything is "Ready 🚀".
+
+### 💻 Example
+
+```python
+ai = AI()
+await ai.peek()
+# --- AI Status ---
+# Model:  gemma3:latest
+# Provider: ollama
+# Status:  Ready 🚀
+```
+
 ---
 
-## 6. Troubleshooting (Product Errors)
+## 6. AI.remember() & AI.forget() - Memory Control
 
-LCM doesn't just crash; it tells you how to fix the problem.
+**Purpose**: To make the AI "human-like" by remembering what you said earlier.
 
-- **`RuntimeUnavailableError`**: Ollama server is likely down. **Fix**: Run `ollama serve`.
-- **`AuthError`**: Your Hugging Face token is wrong or missing. **Fix**: Check your `.model` file for `hf_token`.
-- **`ConfigError`**: There is a typo in your `.model` file. **Fix**: Ensure keys are lowercase and format is `key = value`.
+**Why it's cool**: You can turn memory on and off with one word. No need to manage complex "history" lists yourself.
+
+### 💻 Example
+
+```python
+ai = AI().remember()
+ai.ask("My cat's name is Luna.")
+print(ai.ask("What is my cat's name?")) # "Your cat's name is Luna."
+
+ai.forget() # Reset the AI's brain
+```
+
+---
+
+## 7. AI.pipe() - Flow Chaining
+
+**Purpose**: To connect multiple processing steps together in one readable line.
+
+**Why it's cool**: Inspired by Unix pipes, it allows you to pass data from one AI task to another. Use `.then()` to continue and `.jsononly` to finish!
+
+### 💻 Example
+
+```python
+raw_data = "Apple Inc. released a new phone today. Stocks went up 5%."
+
+result = await ai.pipe(raw_data) \
+             .then("Summarize this news into 1 sentence") \
+             .then("Extract the company name and stock change as JSON") \
+             .jsononly
+
+print(result) # {'company': 'Apple Inc.', 'change': '+5%'}
+```
+
+---
+
+## 8. AI.use() - Middleware Superpowers
+
+**Purpose**: To intercept and modify messages before they hit the AI (preprocessing).
+
+**Why it's cool**: Just like Express.js, you can add "layers" to your AI. Useful for security (cleaning PII), logging, or injecting hidden system instructions.
+
+### 💻 Example
+
+```python
+@ai.use
+def add_persona(messages):
+    messages.insert(0, {"role": "system", "content": "You are a professional chef."})
+    return messages
+
+print(ai.ask("How do I boil an egg?")) # Answer will be chef-style!
+```
+
+---
+
+_You have reached the end of the guide. Now go build something amazing!_ 🚀

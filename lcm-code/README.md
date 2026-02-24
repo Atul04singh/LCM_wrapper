@@ -1,195 +1,131 @@
-# LCM (Lightweight Chat Model) Documentation
+# 🚀 LCM: Lightweight Chat Model
 
-LCM is a developer-first, unified interface for running Large Language Models across multiple providers. It abstracts away the complexity of switching between **Ollama** and **Hugging Face**, allowing you to swap backends by changing a single configuration line.
+**The effortless way to use open-source LLMs locally.**
+
+LCM is a premium Python wrapper designed for developers who want the power of local and cloud LLMs without the boilerplate. It features a "Catchy API" that makes complex workflows feel like a walk in the park.
 
 ---
 
-## 🚀 Vision
+## ✨ Features
 
-The goal of LCM is to provide a "Product-First" AI library.
-
-- **Zero Boilerplate**: No more writing 20 lines of `asyncio` code for a simple script.
-- **Unified API**: Chat, Stream, and Embed work exactly the same way regardless of the provider.
-- **Actionable Errors**: Errors don't just tell you what's wrong; they tell you how to fix it.
+- **Catchy API**: Intuitive methods like `.ask()`, `.flow()`, and `.extract()`.
+- **Fluent Chaining**: Build complex AI pipelines with `.pipe().then().jsononly`.
+- **Express-like Middleware**: Intercept and modify message flows globally with `.use()`.
+- **Zero Config**: Use `.model` files to swap providers and models without touching code.
+- **Production Ready**: Built-in automatic retries, local JSON caching, and emoji-rich logging.
+- **Multi-Provider**: Seamless support for **Ollama** and **Hugging Face** (Local & Cloud).
 
 ---
 
 ## 🛠️ Installation
 
-LCM is modular. Install only what you need:
-
 ```bash
-# Core package (Configuration and Base Classes)
-pip install lcm
-
-# For Ollama support (includes httpx)
-pip install lcm[ollama]
-
-# For Hugging Face Local (Transformers, Torch, Accelerate)
-pip install lcm[hf]
-
-# Full suite (Everything above)
-pip install lcm[all]
+git clone https://github.com/Atul04singh/LCM_wrapper.git
+cd LCM_wrapper/lcm-code
+pip install -e .[all]
 ```
 
 ---
 
-## 🏗️ Architecture
+## 🚀 Quick Start (The "Easy" Way)
 
-LCM sits as a thin layer between your application and the AI runtimes.
+### 1. Configure your logic in `.model`
 
-```mermaid
-graph TD
-    UserCode[User Code] --> Model[Model Class]
-    Model --> ConfigResolver[Config Resolver]
-    ConfigResolver --> DotModel[.model file]
-    ConfigResolver --> EnvVars[Env Variables]
-    Model --> ProviderResolver[Provider Resolver]
-    ProviderResolver --> Ollama[Ollama Provider]
-    ProviderResolver --> HF[Hugging Face Provider]
-    HF --> HFLocal[Local Runtime - Transformers]
-    HF --> HFCloud[Cloud Runtime - Inference API]
+```ini
+provider = ollama
+model = gemma3:latest
+verbose = true
+```
+
+### 2. Run your AI
+
+```python
+from lcm import AI
+
+ai = AI()
+response = ai.ask("Explain quantum entanglement like I'm five.")
+print(response)
+```
+
+---
+
+## 📖 The Catchy API Reference
+
+| Method            | Purpose          | Implementation Detail                          |
+| :---------------- | :--------------- | :--------------------------------------------- |
+| **`.ask()`**      | Simple Q&A       | Replaces `chat()`. Supports retries/caching.   |
+| **`.flow()`**     | Streaming tokens | Yields words one by one for a smooth UI.       |
+| **`.extract()`**  | Structured Data  | Automatically maps text to your JSON schema.   |
+| **`.point()`**    | Word Embeddings  | Turns text into high-dimensional vector space. |
+| **`.remember()`** | Session Memory   | Automates chat history management.             |
+| **`.forget()`**   | Clear Brain      | Resets the conversation context.               |
+| **`.peek()`**     | Health Check     | Beautifully prints the current AI status.      |
+| **`.pipe()`**     | Start Chain      | Initiates a fluent processing flow.            |
+
+---
+
+## 🧱 Advanced Workflows
+
+### 🔗 Fluent Chaining
+
+Pass results from one task to another elegantly.
+
+```python
+result = await ai.pipe("Raw customer feedback text...") \
+             .then("Summarize into a single sentence") \
+             .then("Extract sentiment and key topics as JSON") \
+             .jsononly
+```
+
+### 🏴‍☠️ Middleware
+
+Modify every message before it reaches the AI.
+
+```python
+@ai.use
+def pirate_middleware(messages):
+    messages.insert(0, {"role": "system", "content": "Ye are a pirate captain."})
+    return messages
+
+ai.ask("How is the weather?") # "Arrr, the skies be clear today, matey!"
 ```
 
 ---
 
 ## ⚙️ Configuration (.model)
 
-LCM uses a unique `.model` file system inspired by `.env` but tailored for LLMs.
+LCM looks for a `.model` file in your project or home directory.
 
-### 1. The .model File Syntax
-
-Create a `.model` file in your project root:
+**Ollama (Local):**
 
 ```ini
-provider = ollama             # ollama | huggingface
-model = gemma3:4b             # Model ID or name
-runtime = local               # local | cloud (HF only)
-stream = true                 # Global streaming default
-timeout = 120                 # Connection timeout (s)
-device = auto                 # For HF Local: cpu | cuda | mps
-hf_token = ${HF_TOKEN}        # Interpolates env vars
+provider = ollama
+model = llama3:8b
 ```
 
-### 2. Search Priority
+**Hugging Face (Cloud):**
 
-LCM searches for settings in this specific order (First match wins):
-
-1. **Explicit Constructor**: `Model(model="...")`
-2. **Project File**: `./.model` (Current directory)
-3. **User Config**: `~/.model` (Your Home folder for global settings)
-4. **Environment Variables**: e.g., `LCM_PROVIDER=huggingface`
-5. **System Defaults**: (Provider: ollama, Model: qwen2.5:7b)
-
----
-
-## 📖 API Reference
-
-### Constructor: `Model(model_name=None, **options)`
-
-All parameters in the `.model` file can be passed as keyword arguments.
-
-```python
-from lcm import Model
-model = Model("llama3", provider="ollama", timeout=30)
-```
-
-### Response Methods
-
-LCM provides both **Modern Async** and **Simple Sync** versions of every method.
-
-#### 1. Chat (`chat` / `chat_sync`)
-
-Returns the full AI response as a string.
-
-- **Async**: `await model.chat("Hi!")`
-- **Sync**: `model.chat_sync("Hi!")`
-
-#### 2. Stream (`stream` / `stream_sync`)
-
-Yields tokens one by one for real-time interfaces.
-
-- **Async**:
-  ```python
-  async for token in model.stream("Story"):
-      print(token, end="", flush=True)
-  ```
-- **Sync**:
-  ```python
-  for token in model.stream_sync("Story"):
-      print(token, end="", flush=True)
-  ```
-
-#### 3. Embed (`embed` / `embed_sync`)
-
-Returns a list of floats representing the text vector.
-
-- **Sync**: `vector = model.embed_sync("AI")`
-
-#### 4. Health (`health` / `health_sync`)
-
-Check if the provider is reachable and the model is ready.
-
-- **Sync**: `status = model.health_sync()`
-
----
-
-## 🔌 Provider Specifics
-
-### 1. Ollama (Best for Local Development)
-
-LCM treats Ollama as a local-first proxy.
-
-- **Local Access**: Connects to `localhost:11434` by default.
-- **Cloud Models**: If you use a model ending in `-cloud` (e.g., `llama3-cloud`), your local Ollama daemon handles the cloud proxying. **Note**: You must be signed in via the Ollama CLI.
-- **Auto-Pull**: If a model is missing, LCM will automatically trigger a `pull` command.
-
-### 2. Hugging Face (The Hybrid Choice)
-
-Switch between local execution and cloud API effortlessly.
-
-- **Cloud Runtime**: Uses the **Hugging Face Inference API**. Requires `hf_token`.
-- **Local Runtime**: Uses the **Transformers library**. It will download weights to your home directory and run them on your hardware (`device`).
-
----
-
-## ⚡ Quick Examples
-
-### Simple Script (Sync Mode)
-
-```python
-from lcm import Model
-
-model = Model() # Loads from your .model file
-print(model.chat_sync("Quick fact about Mars?"))
-```
-
-### Web Server (Async Mode)
-
-```python
-from lcm import Model
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
-
-app = FastAPI()
-model = Model()
-
-@app.get("/chat")
-async def chat(q: str):
-    return StreamingResponse(model.stream(q))
+```ini
+provider = huggingface
+runtime = cloud
+model = mistralai/Mistral-7B-v0.1
+hf_token = ${HF_TOKEN}
 ```
 
 ---
 
-## 🔴 Troubleshooting
+## 🏗️ Project Structure
 
-| Error                         | Cause                    | The Fix                                   |
-| :---------------------------- | :----------------------- | :---------------------------------------- |
-| **`ConfigError`**             | Syntax error in `.model` | Check if you used `=` and lowercase keys. |
-| **`RuntimeUnavailableError`** | Provider not found       | Run `ollama serve` or check internet.     |
-| **`AuthError`**               | HF Token missing         | Add `hf_token = ${HF_TOKEN}` to `.model`. |
-| **`ModuleNotFoundError`**     | Missing Extras           | Run `pip install lcm[all]`.               |
+- `src/lcm/`: Core logic and provider implementation.
+- `tests/`: Comprehensive examples for every Catchy API feature.
+- `walkthrough.md`: A detailed "book" for mastering LCM.
 
 ---
 
-_Created by the LCM Team. Happy coding!_
+## 🤝 Contributing
+
+We love contributions! Feel free to open issues or submit pull requests to make local AI even easier for everyone.
+
+---
+
+_Built with ❤️ for the open-source community._

@@ -14,6 +14,8 @@ class LCMConfig(BaseModel):
     device: str = "auto"
     timeout: int = 120
     stream: bool = True
+    verbose: bool = False
+    cache: bool = True
 
 class ConfigResolver:
     @staticmethod

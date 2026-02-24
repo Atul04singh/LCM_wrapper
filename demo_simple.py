@@ -1,19 +1,19 @@
-from lcm import Model
+from lcm import AI
 
 def main():
-    # No asyncio, no async/await!
-    model = Model()
+    # Using the new catchy 'AI' class
+    ai = AI(verbose=True)
     
-    print("--- SYNC CHAT ---")
-    response = model.chat_sync("What is 2+2?")
+    print("--- SYNC ASK ---")
+    response = ai.ask_sync("What is 2+2?")
     print(f"AI: {response}")
     
-    print("\n--- SYNC STREAM ---")
-    # Using a simple for-loop
-    for token in model.stream_sync("Count to 5 slowly."):
+    print("\n--- SYNC FLOW ---")
+    # Using 'flow_sync' for character-by-character typing
+    for token in ai.flow_sync("Count to 5 slowly."):
         print(token, end="", flush=True)
     
-    print("\n\nDone.")
+    print("\n\nDone. 🚀")
 
 if __name__ == "__main__":
     main()
